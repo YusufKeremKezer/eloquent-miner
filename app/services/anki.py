@@ -1,6 +1,4 @@
 import hashlib
-import os
-import tempfile
 from pathlib import Path
 from typing import List, Optional
 
@@ -13,32 +11,27 @@ from app.models.phrase import Phrase
 
 
 def generate_anki_id(input_string: str) -> int:
-    """Generate a stable numeric ID from a string for genanki."""
     hash_val = int(hashlib.md5(input_string.encode()).hexdigest()[:8], 16)
     return hash_val
 
 
 def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = None) -> str:
-    """
-    Builds an Anki .apkg file for a job.
-    Returns the path to the generated .apkg file.
-    """
-    
-    # Fetch phrases
     statement = select(Phrase).where(Phrase.job_id == job.id)
     if status_filter:
         statement = statement.where(Phrase.status == status_filter)
-    
-    phrases = session.exec(statement).all()
-    
-    if not phrases:
-        raise ValueError(f"No phrases found for job {job.id} with status filter: {status_filter}")
 
-    # Generate stable IDs
+    phrases = session.exec(statement).all()
+
+    if not phrases:
+        raise ValueError(f"No phrases found for job {job.id}")
+
     deck_id = generate_anki_id(f"deck_{job.id}")
     model_id = generate_anki_id(f"model_{job.id}")
 
-    # Define the Anki model (note type)
+    # Build source link
+    source_url = job.source_url or ""
+    source_link = f'<a href="{source_url}" style="color:#3b82f6;">🎬 Watch Source Video</a>' if source_url else ""
+
     eloquent_model = genanki.Model(
         model_id,
         'Eloquent Phrase',
@@ -86,6 +79,8 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
                     '<div style="font-size: 13px; color: #999;">'
                     '<b>Alternatives:</b> {{Alternatives}}'
                     '</div>'
+                    '<br><br>'
+                    '{{Source}}'
                 ),
             },
             {
@@ -115,6 +110,8 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
                     '<div style="font-size: 13px; color: #999;">'
                     '<b>Why eloquent:</b> {{WhyEloquent}}'
                     '</div>'
+                    '<br><br>'
+                    '{{Source}}'
                 ),
             },
             {
@@ -136,33 +133,40 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
                     '<div style="font-size: 14px;">'
                     '{{Definition}}'
                     '</div>'
+                    '<br><br>'
+                    '{{Source}}'
                 ),
             },
         ],
-        css='.card { font-family: "Segoe UI", Arial, sans-serif; font-size: 16px; text-align: center; color: #333; background-color: #fafafa; padding: 20px; }'
+        css='''
+        .card {
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 16px;
+            text-align: center;
+            color: #333;
+            background-color: #fafafa;
+            padding: 20px;
+        }
+        a { color: #3b82f6; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        '''
     )
 
-    # Create the deck
     deck_name = f"Eloquent Miner::{job.title or job.id}"
     deck = genanki.Deck(deck_id, deck_name)
 
-    # Collect media files
     media_files = []
 
-    # Add notes
     for phrase in phrases:
-        # Build audio field
         audio_field = ""
         if phrase.audio_filename:
             audio_basename = Path(phrase.audio_filename).name
             audio_field = f"[sound:{audio_basename}]"
-            
-            # Add the actual file path to media list
+
             audio_path = Path(settings.media_dir) / phrase.audio_filename
             if audio_path.exists():
                 media_files.append(str(audio_path))
 
-        # Build alternatives string
         alternatives_str = ", ".join(phrase.alternatives) if phrase.alternatives else ""
 
         note = genanki.Note(
@@ -177,24 +181,22 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
                 alternatives_str,
                 phrase.why_eloquent or "",
                 audio_field,
-                job.source_url or job.title or "",
+                source_link,  # YouTube link here!
             ],
             tags=[settings.app_name.lower().replace(" ", "-"), "eloquence"]
         )
         deck.add_note(note)
 
-    # Create package with media
     package = genanki.Package(deck)
     if media_files:
         package.media_files = media_files
 
-    # Write to a temporary file
     output_dir = Path(settings.jobs_dir) / job.id
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     output_filename = f"eloquent_miner_{job.id}.apkg"
     output_path = output_dir / output_filename
-    
+
     package.write_to_file(str(output_path))
 
     return str(output_path)
