@@ -8,7 +8,6 @@ from app.core.config import settings
 
 
 def validate_youtube_url(url: str) -> bool:
-    """Validates that the URL is a YouTube URL."""
     patterns = [
         r"(https?://)?(www\.)?youtube\.com/watch\?v=[\w-]{11}",
         r"(https?://)?(www\.)?youtu\.be/[\w-]{11}",
@@ -19,7 +18,6 @@ def validate_youtube_url(url: str) -> bool:
 
 
 def extract_video_id(url: str) -> Optional[str]:
-    """Extracts the video ID from a YouTube URL."""
     patterns = [
         r"(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/shorts/|youtube\.com/embed/)([\w-]{11})",
     ]
@@ -31,66 +29,83 @@ def extract_video_id(url: str) -> Optional[str]:
 
 
 def get_video_info(url: str) -> dict:
-    """Fetches video metadata without downloading."""
+    # NO extra flags. Default client selection works best.
     cmd = [
         "yt-dlp",
         "--dump-json",
         "--no-download",
-        "--js-runtimes", "node,deno,bun",  # <-- FIX: Tell yt-dlp to use Node.js
-        url
-    ]
-    
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise RuntimeError(f"Failed to fetch video info: {result.stderr}")
-    
-    return json.loads(result.stdout)
-
-
-def download_audio(url: str, output_dir: Path, video_id: str) -> str:
-    """Downloads audio from YouTube and converts to MP3."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    output_template = str(output_dir / "source.%(ext)s")
-    
-    cmd = [
-        "yt-dlp",
-        "-f", "bestaudio/best",
-        "--extract-audio",
-        "--audio-format", settings.youtube_audio_format,
-        "--audio-quality", "0",
-        "--js-runtimes", "node,deno,bun",  # <-- FIX: Tell yt-dlp to use Node.js
-        "-o", output_template,
         "--no-playlist",
         url
     ]
-    
+
+    print(f"Running: {' '.join(cmd)}")
+
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        raise RuntimeError(f"Failed to download audio: {result.stderr}")
-    
-    # Find the downloaded file
-    audio_file = output_dir / f"source.{settings.youtube_audio_format}"
-    if audio_file.exists():
-        return str(audio_file)
-    
-    # Fallback: look for any source file
-    for ext in ["mp3", "wav", "m4a", "ogg", "flac", "webm", "mp4"]:
-        fallback = output_dir / f"source.{ext}"
-        if fallback.exists():
-            return str(fallback)
-    
-    raise RuntimeError("Audio file was not created after download.")
+        raise RuntimeError(f"Failed to fetch video info: {result.stderr}")
+
+    first_line = result.stdout.strip().split('\n')[0]
+
+    try:
+        return json.loads(first_line)
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse video info: {e}")
+        print(f"First 500 chars: {first_line[:500]}")
+        raise RuntimeError(f"Failed to parse video info: {e}")
+
+
+def download_audio(url: str, output_dir: Path, video_id: str) -> str:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    output_template = str(output_dir / "source.%(ext)s")
+
+    # Fallback chain: try formats in order until one succeeds.
+    # 140 = m4a medium, 251 = webm opus, 18 = progressive mp4 (has audio)
+    strategies = [
+        ("bestaudio", ["-f", "bestaudio/best"]),
+        ("140 (m4a audio)", ["-f", "140"]),
+        ("251 (webm audio)", ["-f", "251"]),
+        ("139 (m4a low)", ["-f", "139"]),
+        ("18 (mp4 progressive)", ["-f", "18"]),
+    ]
+
+    last_error = ""
+
+    for i, (name, fmt_args) in enumerate(strategies):
+        cmd = [
+            "yt-dlp",
+            *fmt_args,
+            "--extract-audio",
+            "--audio-format", settings.youtube_audio_format,
+            "--audio-quality", "0",
+            "-o", output_template,
+            "--no-playlist",
+            url
+        ]
+
+        print(f"[{i+1}/{len(strategies)}] Trying format: {name}")
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        if result.returncode == 0:
+            audio_file = output_dir / f"source.{settings.youtube_audio_format}"
+            if audio_file.exists() and audio_file.stat().st_size > 1000:
+                print(f"✅ Success with format: {name}")
+                return str(audio_file)
+
+        last_error = result.stderr
+        print(f"❌ Failed with format: {name}")
+
+    raise RuntimeError(f"Failed to download audio with all formats. Last error: {last_error}")
 
 
 def download_subtitles(url: str, output_dir: Path, video_id: str) -> Optional[str]:
-    """Downloads subtitles from YouTube. Returns the subtitle file path or None."""
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     output_template = str(output_dir / "subs")
-    
+
     langs = settings.youtube_subtitle_langs.split(",")
-    
+
     cmd = [
         "yt-dlp",
         "--skip-download",
@@ -99,46 +114,50 @@ def download_subtitles(url: str, output_dir: Path, video_id: str) -> Optional[st
         "--sub-lang", ",".join(langs),
         "--sub-format", "srt/vtt/best",
         "--convert-subs", "srt",
-        "--js-runtimes", "node,deno,bun",  # <-- FIX: Added here too
         "-o", output_template,
         "--no-playlist",
         url
     ]
-    
+
+    print(f"Downloading subtitles: {' '.join(cmd)}")
+
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        raise RuntimeError(f"Failed to download subtitles: {result.stderr}")
-    
-    # Look for the downloaded subtitle file
+        print(f"Subtitle download warning: {result.stderr}")
+        return None
+
     for lang in langs:
         for ext in ["srt", "vtt"]:
             sub_file = output_dir / f"subs.{lang}.{ext}"
             if sub_file.exists():
+                print(f"Found subtitle: {sub_file}")
                 return str(sub_file)
-    
-    # Fallback: look for any subtitle file
+
     for ext in ["srt", "vtt"]:
         for sub_file in output_dir.glob(f"subs*.{ext}"):
             if sub_file.exists():
+                print(f"Found subtitle (fallback): {sub_file}")
                 return str(sub_file)
-    
+
+    print("No subtitle file found")
     return None
 
 
 def process_youtube_url(url: str, job_id: str) -> Tuple[str, Optional[str], dict]:
-    """
-    Downloads audio and subtitles for a YouTube URL.
-    Returns: (audio_path, subtitle_path_or_None, video_info)
-    """
     video_id = extract_video_id(url)
     if not video_id:
         raise ValueError(f"Could not extract video ID from URL: {url}")
-    
+
     job_media_dir = Path(settings.media_dir) / job_id
     job_media_dir.mkdir(parents=True, exist_ok=True)
-    
+
+    print(f"Fetching video info...")
     video_info = get_video_info(url)
+
+    print(f"Downloading audio...")
     audio_path = download_audio(url, job_media_dir, video_id)
+
+    print(f"Downloading subtitles...")
     subtitle_path = download_subtitles(url, job_media_dir, video_id)
-    
+
     return audio_path, subtitle_path, video_info
