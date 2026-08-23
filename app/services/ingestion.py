@@ -1,5 +1,4 @@
 import re
-from typing import List
 
 from fastapi import HTTPException
 from sqlmodel import Session, select
@@ -17,7 +16,7 @@ def delete_segments_for_job(session: Session, job_id: str) -> None:
         session.delete(segment)
 
 
-def split_text_into_sentences(text: str) -> List[str]:
+def split_text_into_sentences(text: str) -> list[str]:
     text = re.sub(r"\s+", " ", text).strip()
 
     parts = re.split(r"(?<=[.!?])\s+", text)
@@ -25,8 +24,8 @@ def split_text_into_sentences(text: str) -> List[str]:
     return [part.strip() for part in parts if part.strip()]
 
 
-def raw_text_to_segments(raw_text: str) -> List[Segment]:
-    segments: List[Segment] = []
+def raw_text_to_segments(raw_text: str) -> list[Segment]:
+    segments: list[Segment] = []
 
     lines = raw_text.splitlines()
 
@@ -85,7 +84,7 @@ def ingest_transcript(
     session: Session,
     job: Job,
     payload: TranscriptInput
-) -> List[Segment]:
+) -> list[Segment]:
     has_segments = len(payload.segments) > 0
     has_raw_text = bool(payload.raw_text and payload.raw_text.strip())
 
@@ -103,7 +102,7 @@ def ingest_transcript(
     if payload.language:
         job.language = payload.language
 
-    new_segments: List[Segment] = []
+    new_segments: list[Segment] = []
 
     if has_segments:
         for item in payload.segments:

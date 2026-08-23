@@ -28,22 +28,21 @@ class Settings(BaseSettings):
     enable_youtube_search: bool = False
     enable_youtube_download: bool = True
 
-    # Generic LLM fallback
-    llm_provider: str = "manual"
-    llm_model: str = ""
+    llm_provider: str = "gemini"
+    llm_model: str = "gemini-3.7-flash"
     llm_api_key: str = ""
     llm_base_url: str = ""
 
-    # OpenRouter specific
-    openrouter_api_key: str = ""
-    openrouter_base_url: str = "https://openrouter.ai/api/v1"
-    openrouter_app_url: str = "http://localhost:8000"
-
     transcription_provider: str = "manual"
 
-    # YouTube specific
     youtube_audio_format: str = "mp3"
     youtube_subtitle_langs: str = "en"
+
+    # Audio clipping settings
+    clip_padding_before: float = 2
+    clip_padding_after: float = 5
+    clip_fade_duration: float = 0.05
+    subtitle_offset: float = 0.0
 
 
 settings = Settings()

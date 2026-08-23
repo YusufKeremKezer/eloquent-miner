@@ -1,6 +1,6 @@
 import hashlib
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import genanki
 from sqlmodel import Session, select
@@ -28,10 +28,10 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
     deck_id = generate_anki_id(f"deck_{job.id}")
     model_id = generate_anki_id(f"model_{job.id}")
 
-    # Build source link
     source_url = job.source_url or ""
     source_link = f'<a href="{source_url}" style="color:#3b82f6;">🎬 Watch Source Video</a>' if source_url else ""
 
+    # TEK kart tipi: Anlam → Kelime + Ses
     eloquent_model = genanki.Model(
         model_id,
         'Eloquent Phrase',
@@ -49,24 +49,26 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
         ],
         templates=[
             {
-                'name': 'Production',
+                'name': 'Eloquent Phrase',
+                # ÖN YÜZ: Sadece anlam
                 'qfmt': (
                     '<div style="font-size: 18px; color: #555;">'
                     '{{Definition}}'
                     '</div>'
                     '<br>'
                     '<div style="font-size: 14px; color: #888; font-style: italic;">'
-                    'Usage: {{Usage}}'
+                    '{{Usage}}'
                     '</div>'
                     '<br><br>'
                     '<div style="font-size: 16px;">'
-                    '<i>How would you say this?</i>'
+                    '<i>What is the phrase?</i>'
                     '</div>'
                 ),
+                # ARKA YÜZ: Kelime + Ses + Örnek
                 'afmt': (
                     '{{FrontSide}}'
                     '<hr id="answer">'
-                    '<div style="font-size: 22px; font-weight: bold; color: #2c3e50;">'
+                    '<div style="font-size: 24px; font-weight: bold; color: #2c3e50;">'
                     '{{Phrase}}'
                     '</div>'
                     '<br>'
@@ -78,60 +80,6 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
                     '<br>'
                     '<div style="font-size: 13px; color: #999;">'
                     '<b>Alternatives:</b> {{Alternatives}}'
-                    '</div>'
-                    '<br><br>'
-                    '{{Source}}'
-                ),
-            },
-            {
-                'name': 'Recognition',
-                'qfmt': (
-                    '<div style="font-size: 22px; font-weight: bold;">'
-                    '{{Phrase}}'
-                    '</div>'
-                    '<br>'
-                    '{{Audio}}'
-                ),
-                'afmt': (
-                    '{{FrontSide}}'
-                    '<hr id="answer">'
-                    '<div style="font-size: 16px;">'
-                    '{{Definition}}'
-                    '</div>'
-                    '<br>'
-                    '<div style="font-size: 14px; color: #666;">'
-                    '<b>Usage:</b> {{Usage}}'
-                    '</div>'
-                    '<br>'
-                    '<div style="font-size: 14px; color: #666;">'
-                    '<b>Original context:</b> {{ExampleOriginal}}'
-                    '</div>'
-                    '<br>'
-                    '<div style="font-size: 13px; color: #999;">'
-                    '<b>Why eloquent:</b> {{WhyEloquent}}'
-                    '</div>'
-                    '<br><br>'
-                    '{{Source}}'
-                ),
-            },
-            {
-                'name': 'Listening',
-                'qfmt': (
-                    '{{Audio}}'
-                    '<br><br>'
-                    '<div style="font-size: 16px; color: #555;">'
-                    '<i>What is being said?</i>'
-                    '</div>'
-                ),
-                'afmt': (
-                    '{{FrontSide}}'
-                    '<hr id="answer">'
-                    '<div style="font-size: 20px; font-weight: bold;">'
-                    '{{Phrase}}'
-                    '</div>'
-                    '<br>'
-                    '<div style="font-size: 14px;">'
-                    '{{Definition}}'
                     '</div>'
                     '<br><br>'
                     '{{Source}}'
@@ -181,7 +129,7 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
                 alternatives_str,
                 phrase.why_eloquent or "",
                 audio_field,
-                source_link,  # YouTube link here!
+                source_link,
             ],
             tags=[settings.app_name.lower().replace(" ", "-"), "eloquence"]
         )

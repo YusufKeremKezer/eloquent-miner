@@ -1,6 +1,5 @@
-from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlmodel import Session, select
 
 from app.core.database import get_session
@@ -14,7 +13,7 @@ router = APIRouter()
 
 @router.post(
     "/jobs/{job_id}/subtitles",
-    response_model=List[SegmentRead],
+    response_model=list[SegmentRead],
     status_code=201
 )
 async def upload_subtitles(

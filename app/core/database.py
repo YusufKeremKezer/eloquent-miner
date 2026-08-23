@@ -1,6 +1,6 @@
-from sqlmodel import SQLModel, create_engine, Session
-from app.core.config import settings
+from sqlmodel import Session, SQLModel, create_engine
 
+from app.core.config import settings
 
 connect_args = {}
 

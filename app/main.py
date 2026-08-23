@@ -4,12 +4,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+import app.models
 from app.core.config import settings
 from app.core.database import create_db_and_tables
-
-from app.routers import jobs, phrases, segments, extraction, uploads, clips, export, subtitles, youtube
-
-import app.models  # noqa: F401
+from app.routers import (
+    clips,
+    export,
+    extraction,
+    jobs,
+    phrases,
+    segments,
+    subtitles,
+    uploads,
+    youtube,
+)
 
 
 def create_data_directories():

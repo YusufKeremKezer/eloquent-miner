@@ -1,13 +1,14 @@
 import subprocess
 from pathlib import Path
-from typing import List, Optional
+
 from sqlmodel import Session, select
 
 from app.core.config import settings
 from app.models.job import Job
 from app.models.phrase import Phrase
 
-def find_source_audio(job_id: str) -> Optional[Path]:
+
+def find_source_audio(job_id: str) -> Path | None:
     """Looks for the uploaded source audio file in the job's media folder."""
     job_media_dir = Path(settings.media_dir) / job_id
     if not job_media_dir.exists():
@@ -38,7 +39,7 @@ def clip_phrase_audio(source_path: Path, output_path: Path, start: float, end: f
     if result.returncode != 0:
         raise RuntimeError(f"ffmpeg failed: {result.stderr}")
 
-def generate_clips_for_job(session: Session, job: Job) -> List[Phrase]:
+def generate_clips_for_job(session: Session, job: Job) -> list[Phrase]:
     source_audio = find_source_audio(job.id)
     if not source_audio:
         raise ValueError(f"No source audio found for job {job.id}. Please upload audio first.")

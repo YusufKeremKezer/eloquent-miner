@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -15,7 +14,7 @@ router = APIRouter()
 @router.get("/jobs/{job_id}/export/anki")
 def export_anki_deck(
     job_id: str,
-    status: Optional[str] = Query(
+    status: str | None = Query(
         default=None,
         description="Filter phrases by status: candidate, approved, rejected. Leave empty for all."
     ),
@@ -34,7 +33,7 @@ def export_anki_deck(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Anki export failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Anki export failed: {e!s}")
 
     # Return the file as a download
     filename = Path(apkg_path).name
@@ -48,11 +47,12 @@ def export_anki_deck(
 @router.get("/jobs/{job_id}/export/json")
 def export_phrases_json(
     job_id: str,
-    status: Optional[str] = Query(default=None),
+    status: str | None = Query(default=None),
     session: Session = Depends(get_session)
 ):
     """Export phrases as raw JSON (useful for backup or other tools)."""
     from sqlmodel import select
+
     from app.models.phrase import Phrase
 
     job = session.get(Job, job_id)

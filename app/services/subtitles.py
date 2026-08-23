@@ -1,7 +1,4 @@
 import re
-from typing import List, Tuple, Optional
-
-from app.models.segment import Segment
 
 
 def parse_timestamp_to_seconds(timestamp: str) -> float:
@@ -46,7 +43,7 @@ def strip_vtt_tags(text: str) -> str:
     return text.strip()
 
 
-def parse_srt_content(content: str) -> List[dict]:
+def parse_srt_content(content: str) -> list[dict]:
     """
     Parses SRT subtitle content into segments.
     
@@ -95,7 +92,7 @@ def parse_srt_content(content: str) -> List[dict]:
     return segments
 
 
-def parse_vtt_content(content: str) -> List[dict]:
+def parse_vtt_content(content: str) -> list[dict]:
     """
     Parses VTT subtitle content into segments.
     
@@ -176,7 +173,7 @@ def parse_vtt_content(content: str) -> List[dict]:
     return segments
 
 
-def parse_subtitle_content(content: str, filename: str) -> List[dict]:
+def parse_subtitle_content(content: str, filename: str) -> list[dict]:
     """
     Detects subtitle format and parses content.
     Returns a list of segment dictionaries.

@@ -1,4 +1,3 @@
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
@@ -6,7 +5,6 @@ from sqlmodel import Session, select
 from app.core.database import get_session
 from app.models.job import Job
 from app.schemas.job import JobCreate, JobRead
-
 
 router = APIRouter()
 
@@ -22,7 +20,7 @@ def create_job(payload: JobCreate, session: Session = Depends(get_session)):
     return job
 
 
-@router.get("", response_model=List[JobRead])
+@router.get("", response_model=list[JobRead])
 def list_jobs(session: Session = Depends(get_session)):
     statement = select(Job).order_by(Job.created_at.desc())
     jobs = session.exec(statement).all()
@@ -49,4 +47,3 @@ def delete_job(job_id: str, session: Session = Depends(get_session)):
     session.delete(job)
     session.commit()
 
-    return None

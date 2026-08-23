@@ -1,17 +1,15 @@
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from app.core.database import get_session
 from app.models.job import Job
-from app.models.phrase import Phrase
 from app.schemas.phrase import PhraseRead
 from app.services.clipping import generate_clips_for_job
 
 router = APIRouter()
 
-@router.post("/jobs/{job_id}/clips", response_model=List[PhraseRead])
+@router.post("/jobs/{job_id}/clips", response_model=list[PhraseRead])
 def create_audio_clips(
     job_id: str,
     session: Session = Depends(get_session)
@@ -25,6 +23,6 @@ def create_audio_clips(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Clipping failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Clipping failed: {e!s}")
         
     return clipped_phrases

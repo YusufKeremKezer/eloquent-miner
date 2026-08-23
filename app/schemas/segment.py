@@ -1,11 +1,10 @@
-from typing import Optional, List
 
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field, SQLModel
 
 
 class SegmentBase(SQLModel):
-    start: Optional[float] = None
-    end: Optional[float] = None
+    start: float | None = None
+    end: float | None = None
     text: str
 
 
@@ -19,9 +18,9 @@ class SegmentRead(SegmentBase):
 
 
 class TranscriptInput(SQLModel):
-    language: Optional[str] = None
+    language: str | None = None
     replace: bool = True
 
-    raw_text: Optional[str] = None
+    raw_text: str | None = None
 
-    segments: List[SegmentCreate] = Field(default_factory=list)
+    segments: list[SegmentCreate] = Field(default_factory=list)

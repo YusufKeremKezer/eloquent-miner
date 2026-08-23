@@ -1,11 +1,9 @@
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from app.core.database import get_session
 from app.models.job import Job
-from app.models.phrase import Phrase
 from app.schemas.phrase import PhraseRead
 from app.services.extraction import extract_and_save_phrases
 
@@ -13,7 +11,7 @@ router = APIRouter()
 
 @router.post(
     "/jobs/{job_id}/extract",
-    response_model=List[PhraseRead],
+    response_model=list[PhraseRead],
     status_code=200
 )
 def extract_phrases_endpoint(

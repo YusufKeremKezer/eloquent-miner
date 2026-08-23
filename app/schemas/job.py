@@ -1,13 +1,12 @@
 from datetime import datetime
-from typing import Optional
 
 from sqlmodel import SQLModel
 
 
 class JobBase(SQLModel):
     source_type: str
-    source_url: Optional[str] = None
-    title: Optional[str] = None
+    source_url: str | None = None
+    title: str | None = None
     language: str = "en"
 
 

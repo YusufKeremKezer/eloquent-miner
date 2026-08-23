@@ -1,8 +1,7 @@
-from datetime import datetime
-from typing import Optional
 import uuid
+from datetime import datetime
 
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field, SQLModel
 
 
 class Job(SQLModel, table=True):
@@ -13,9 +12,9 @@ class Job(SQLModel, table=True):
 
     status: str = "pending"
 
-    source_type: Optional[str] = None
-    source_url: Optional[str] = None
-    title: Optional[str] = None
+    source_type: str | None = None
+    source_url: str | None = None
+    title: str | None = None
 
     language: str = "en"
 

@@ -1,4 +1,3 @@
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
@@ -9,13 +8,12 @@ from app.models.segment import Segment
 from app.schemas.segment import SegmentRead, TranscriptInput
 from app.services.ingestion import ingest_transcript
 
-
 router = APIRouter()
 
 
 @router.post(
     "/jobs/{job_id}/transcript",
-    response_model=List[SegmentRead],
+    response_model=list[SegmentRead],
     status_code=201
 )
 def add_transcript(
@@ -39,7 +37,7 @@ def add_transcript(
 
 @router.get(
     "/jobs/{job_id}/segments",
-    response_model=List[SegmentRead]
+    response_model=list[SegmentRead]
 )
 def list_segments_for_job(
     job_id: str,
@@ -58,4 +56,4 @@ def list_segments_for_job(
 
     segments = session.exec(statement).all()
 
-    return segments
+    return segments 

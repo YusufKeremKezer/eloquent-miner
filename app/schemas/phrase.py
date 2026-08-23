@@ -1,26 +1,25 @@
 from datetime import datetime
-from typing import Optional, List
 
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field, SQLModel
 
 
 class PhraseBase(SQLModel):
     phrase: str
 
-    start: Optional[float] = None
-    end: Optional[float] = None
+    start: float | None = None
+    end: float | None = None
 
-    definition: Optional[str] = None
-    usage: Optional[str] = None
+    definition: str | None = None
+    usage: str | None = None
 
-    example_original: Optional[str] = None
-    example_new: Optional[str] = None
+    example_original: str | None = None
+    example_new: str | None = None
 
-    register: Optional[str] = None
+    register: str | None = None
 
-    alternatives: List[str] = Field(default_factory=list)
+    alternatives: list[str] = Field(default_factory=list)
 
-    why_eloquent: Optional[str] = None
+    why_eloquent: str | None = None
 
 
 class PhraseCreate(PhraseBase):
@@ -31,5 +30,5 @@ class PhraseRead(PhraseBase):
     id: int
     job_id: str
     status: str
-    audio_filename: Optional[str] = None
+    audio_filename: str | None = None
     created_at: datetime
