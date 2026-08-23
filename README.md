@@ -1,32 +1,32 @@
-# React + TypeScript + Vite
+# Eloquent Miner — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + Vite + Tailwind web UI for the [Eloquent Miner backend](../eloquent-miner).
+Review mined phrases, listen to real speaker audio, edit clips, and export to Anki.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 18+
+- Backend running at `http://localhost:8000`
 
-## React Compiler
+## Run
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+make up
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+That's it — installs dependencies and starts the dev server at `http://localhost:3000`.
+
+Without make:
+
+```bash
+npm install
+npm run dev
+```
+
+## Features
+
+- Create jobs from YouTube URLs
+- Review phrases with real speaker audio
+- Approve / reject / edit / delete phrases
+- Audio clip editor (trim, extend, preview, re-cut)
+- One-click Anki export
