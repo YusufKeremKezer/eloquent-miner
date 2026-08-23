@@ -1,5 +1,2 @@
 up:
-	docker compose up --build -d
-
-down:
-	docker compose down
+	uv run python run.py
