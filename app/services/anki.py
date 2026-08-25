@@ -15,6 +15,31 @@ def generate_anki_id(input_string: str) -> int:
     return hash_val
 
 
+def format_timestamp(seconds: float) -> str:
+    """123.4 -> '02:03' , 3725 -> '1:02:05'"""
+    total = int(seconds)
+    hours = total // 3600
+    minutes = (total % 3600) // 60
+    secs = total % 60
+    if hours > 0:
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    return f"{minutes:02d}:{secs:02d}"
+
+
+def build_timestamped_url(url: str, start: Optional[float]) -> str:
+    """
+    Appends YouTube timestamp parameter so the video opens exactly
+    at the moment the phrase is spoken.
+    Works with both watch?v= and youtu.be links.
+    """
+    if not url:
+        return ""
+    if start is None:
+        return url
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}t={int(start)}s"
+
+
 def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = None) -> str:
     statement = select(Phrase).where(Phrase.job_id == job.id)
     if status_filter:
@@ -28,10 +53,6 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
     deck_id = generate_anki_id(f"deck_{job.id}")
     model_id = generate_anki_id(f"model_{job.id}")
 
-    source_url = job.source_url or ""
-    source_link = f'<a href="{source_url}" style="color:#3b82f6;">🎬 Watch Source Video</a>' if source_url else ""
-
-    # TEK kart tipi: Anlam → Kelime + Ses
     eloquent_model = genanki.Model(
         model_id,
         'Eloquent Phrase',
@@ -50,7 +71,6 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
         templates=[
             {
                 'name': 'Eloquent Phrase',
-                # ÖN YÜZ: Sadece anlam
                 'qfmt': (
                     '<div style="font-size: 18px; color: #555;">'
                     '{{Definition}}'
@@ -64,7 +84,6 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
                     '<i>What is the phrase?</i>'
                     '</div>'
                 ),
-                # ARKA YÜZ: Kelime + Ses + Örnek
                 'afmt': (
                     '{{FrontSide}}'
                     '<hr id="answer">'
@@ -114,6 +133,18 @@ def build_anki_deck(session: Session, job: Job, status_filter: Optional[str] = N
             audio_path = Path(settings.media_dir) / phrase.audio_filename
             if audio_path.exists():
                 media_files.append(str(audio_path))
+            # Per-phrase timestamped source link
+        phrase_url = build_timestamped_url(job.source_url or "", phrase.start)
+        if phrase_url and phrase.start is not None:
+            source_link = (
+                f'<a href="{phrase_url}">'
+                f'🎬 Watch in context ({format_timestamp(phrase.start)})'
+                f'</a>'
+            )
+        elif phrase_url:
+            source_link = f'<a href="{phrase_url}">🎬 Watch Source Video</a>'
+        else:
+            source_link = ""
 
         alternatives_str = ", ".join(phrase.alternatives) if phrase.alternatives else ""
 
