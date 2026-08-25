@@ -1,0 +1,18 @@
+[project]
+name = "eloquent-miner"
+version = "0.1.0"
+description = "FastAPI backend for mining eloquent English phrases"
+requires-python = ">=3.10"
+
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlmodel",
+    "pydantic-settings",
+    "python-multipart",
+    "openai>=2.53.0",
+    "genanki>=0.13.1",
+    "httpx>=0.28.1",
+    "yt-dlp",
+    
+]
