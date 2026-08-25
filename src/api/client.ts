@@ -16,7 +16,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(error.detail || 'Request failed');
   }
 
-  return res.json();
+  // 204 No Content → boş body, JSON parse etme
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 // Jobs
@@ -45,15 +51,20 @@ export const extractPhrases = (jobId: string) =>
 export const getPhrases = (jobId: string) =>
   request<Phrase[]>(`/jobs/${jobId}/phrases`);
 
-export const approvePhrase = (phraseId: number) =>
-  request<Phrase>(`/phrases/${phraseId}/approve`, { method: 'POST' });
-
-export const rejectPhrase = (phraseId: number) =>
-  request<Phrase>(`/phrases/${phraseId}/reject`, { method: 'POST' });
-
+export const updatePhrase = (phraseId: number, data: Partial<Phrase>) =>
+  request<Phrase>(`/phrases/${phraseId}`, { method: 'PATCH', body: JSON.stringify(data) });
+export const deletePhrase = (phraseId: number) =>
+  request<void>(`/phrases/${phraseId}`, { method: 'DELETE' });
 // Clips
+
 export const generateClips = (jobId: string) =>
   request<Phrase[]>(`/jobs/${jobId}/clips`, { method: 'POST' });
+
+export const reclipPhrase = (phraseId: number, start: number, end: number) =>
+  request<Phrase>(`/phrases/${phraseId}/reclip`, {
+    method: 'POST',
+    body: JSON.stringify({ start, end }),
+  });
 
 // Export
 export const getExportUrl = (jobId: string) =>
